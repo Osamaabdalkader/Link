@@ -128,6 +128,7 @@ let ordersListener = null;
 document.addEventListener('DOMContentLoaded', () => {
     loadPosts();
     loadAdminUsers();
+    addAdminIconToFooter();
 });
 
 // استمع لتغير حالة المستخدم
@@ -343,8 +344,9 @@ function loadOrders(filter = 'all') {
         
         if (snapshot.exists()) {
             const orders = snapshot.val();
+            const postsMap = new Map(); // تجميع الطلبات حسب المنشور
             
-            // تحويل الطلبات إلى مصفوفة
+            // تحويل الطلبات إلى مصفوفة وتجميعها حسب المنشور
             Object.keys(orders).forEach(orderId => {
                 const order = {
                     id: orderId,
@@ -353,21 +355,35 @@ function loadOrders(filter = 'all') {
                 
                 // تطبيق الفلتر
                 if (filter === 'all' || order.status === filter) {
-                    currentOrders.push(order);
+                    if (!postsMap.has(order.postId)) {
+                        postsMap.set(order.postId, {
+                            postId: order.postId,
+                            postTitle: order.postTitle,
+                            postPrice: order.postPrice,
+                            postImage: order.postImage,
+                            orders: [],
+                            createdAt: order.createdAt
+                        });
+                    }
+                    
+                    const postData = postsMap.get(order.postId);
+                    postData.orders.push(order);
+                    
+                    // تحديث الوقت لأحدث طلب
+                    if (!postData.createdAt || order.createdAt > postData.createdAt) {
+                        postData.createdAt = order.createdAt;
+                    }
                 }
             });
             
-            // ترتيب الطلبات حسب الأحدث
-            currentOrders.sort((a, b) => {
-                const timeA = a.createdAt ? a.createdAt : 0;
-                const timeB = b.createdAt ? b.createdAt : 0;
-                return timeB - timeA;
-            });
+            // تحويل Map إلى مصفوفة وترتيبها حسب الأحدث
+            const postsArray = Array.from(postsMap.values());
+            postsArray.sort((a, b) => b.createdAt - a.createdAt);
             
-            // عرض الطلبات
-            if (currentOrders.length > 0) {
-                currentOrders.forEach(order => {
-                    createOrderItem(order);
+            // عرض الطلبات المجمعة
+            if (postsArray.length > 0) {
+                postsArray.forEach(postData => {
+                    createPostOrderItem(postData);
                 });
             } else {
                 ordersContainer.innerHTML = '<p class="no-orders">لا توجد طلبات</p>';
@@ -378,10 +394,82 @@ function loadOrders(filter = 'all') {
     });
 }
 
-// إنشاء عنصر طلب في القائمة
-function createOrderItem(order) {
+// إنشاء عنصر طلب مجمع حسب المنشور
+function createPostOrderItem(postData) {
     const orderElement = document.createElement('div');
     orderElement.className = 'order-item';
+    orderElement.dataset.postId = postData.postId;
+    
+    // حساب عدد الطلبات والحالات
+    const pendingCount = postData.orders.filter(o => o.status === 'pending').length;
+    const approvedCount = postData.orders.filter(o => o.status === 'approved').length;
+    const rejectedCount = postData.orders.filter(o => o.status === 'rejected').length;
+    
+    orderElement.innerHTML = `
+        <div class="order-header">
+            <h3 class="order-title">${postData.postTitle}</h3>
+            <span class="order-count">${postData.orders.length} طلب</span>
+        </div>
+        <div class="order-meta">
+            <span class="order-price">${postData.postPrice}</span>
+            <div class="order-statuses">
+                ${pendingCount > 0 ? `<span class="status-badge status-pending">${pendingCount}</span>` : ''}
+                ${approvedCount > 0 ? `<span class="status-badge status-approved">${approvedCount}</span>` : ''}
+                ${rejectedCount > 0 ? `<span class="status-badge status-rejected">${rejectedCount}</span>` : ''}
+            </div>
+        </div>
+    `;
+    
+    orderElement.addEventListener('click', () => {
+        showPostOrders(postData);
+    });
+    
+    ordersContainer.appendChild(orderElement);
+}
+
+// عرض طلبات منشور معين
+function showPostOrders(postData) {
+    // حفظ طلبات المنشور الحالي
+    window.currentPostOrders = postData;
+    
+    // إنشاء محتوى عرض الطلبات
+    ordersContainer.innerHTML = '';
+    
+    // إضافة زر العودة
+    const backButton = document.createElement('button');
+    backButton.className = 'btn back-btn';
+    backButton.innerHTML = '<i class="fas fa-arrow-right"></i> العودة';
+    backButton.addEventListener('click', () => {
+        loadOrders(document.querySelector('.filter-btn.active').dataset.filter);
+    });
+    ordersContainer.appendChild(backButton);
+    
+    // عرض عنوان المنشور
+    const postHeader = document.createElement('div');
+    postHeader.className = 'post-orders-header';
+    postHeader.innerHTML = `
+        <h3>طلبات المنشور: ${postData.postTitle}</h3>
+        <p>إجمالي الطلبات: ${postData.orders.length}</p>
+    `;
+    ordersContainer.appendChild(postHeader);
+    
+    // عرض الطلبات الفردية
+    if (postData.orders.length > 0) {
+        // ترتيب الطلبات حسب الأحدث
+        postData.orders.sort((a, b) => b.createdAt - a.createdAt);
+        
+        postData.orders.forEach(order => {
+            createIndividualOrderItem(order);
+        });
+    } else {
+        ordersContainer.innerHTML += '<p class="no-orders">لا توجد طلبات لهذا المنشور</p>';
+    }
+}
+
+// إنشاء عنصر طلب فردي
+function createIndividualOrderItem(order) {
+    const orderElement = document.createElement('div');
+    orderElement.className = 'order-item individual-order';
     orderElement.dataset.orderId = order.id;
     
     // تنسيق حالة الطلب
@@ -398,11 +486,10 @@ function createOrderItem(order) {
     
     orderElement.innerHTML = `
         <div class="order-header">
-            <h3 class="order-title">${order.postTitle}</h3>
+            <h3 class="order-title">طلب من مستخدم</h3>
             <span class="order-status ${statusClass}">${statusText}</span>
         </div>
         <div class="order-meta">
-            <span class="order-price">${order.postPrice}</span>
             <span class="order-date">${formatDate(order.createdAt)}</span>
         </div>
     `;
@@ -483,7 +570,7 @@ async function showOrderDetail(order) {
                 <span class="order-detail-value">${sellerData.name}</span>
             </div>
             <div class="order-detail-item">
-                <span class="order-detail-label">الهاتف:</span>
+                <span class="order-detail-label"> الهاتف:</span>
                 <span class="order-detail-value">${sellerData.phone}</span>
             </div>
         </div>
@@ -547,6 +634,11 @@ chatWithBuyerBtn.addEventListener('click', () => {
             // فتح محادثة مع المشتري
             openChat(buyerData);
             showPage(messagesPage);
+            
+            // إرسال رسالة تلقائية عن الطلب
+            setTimeout(() => {
+                messageInput.value = `مرحباً، هذا رد على طلبك للمنتج: ${currentOrder.postTitle}`;
+            }, 500);
         }
     }, { onlyOnce: true });
 });
@@ -565,6 +657,11 @@ chatWithSellerBtn.addEventListener('click', () => {
             // فتح محادثة مع البائع
             openChat(sellerData);
             showPage(messagesPage);
+            
+            // إرسال رسالة تلقائية عن الطلب
+            setTimeout(() => {
+                messageInput.value = `مرحباً، هناك طلب جديد على منتجك: ${currentOrder.postTitle}`;
+            }, 500);
         }
     }, { onlyOnce: true });
 });
@@ -589,7 +686,7 @@ function openOrdersPage() {
     showPage(ordersPage);
 }
 
-// إضافة أيقونة الإدارة إلى Footer إذا كان المستخدم مشرفاً
+// إضافة أيقونة الإدارة إلى Footer
 function addAdminIconToFooter() {
     const footerIcons = document.querySelector('.footer-icons');
     
@@ -620,8 +717,110 @@ function loadMessages() {
             // إظهار رسالة تحميل
             usersList.innerHTML = '<p class="no-users">جاري تحميل المحادثات...</p>';
             
-            // للمستخدمين العاديين، عرض الإدارة فقط
-            loadAdminUsersForMessages(user.uid);
+            if (isAdmin) {
+                // إذا كان مشرفاً، تحميل جميع المستخدمين الذين تواصلوا معهم
+                loadAllUsersForAdmin(user.uid);
+            } else {
+                // إذا كان مستخدم عادي، تحميل الإدارة فقط
+                loadAdminUsersForMessages(user.uid);
+            }
+        }
+    }, { onlyOnce: true });
+}
+
+// تحميل جميع المستخدمين الذين تواصلوا مع الإدارة (للمشرفين)
+function loadAllUsersForAdmin(currentUserId) {
+    const messagesRef = ref(database, 'messages');
+    onValue(messagesRef, (snapshot) => {
+        usersList.innerHTML = '';
+        userMessages = {};
+        userUnreadCounts = {};
+        userLastMessageTime = {};
+        
+        if (snapshot.exists()) {
+            const messages = snapshot.val();
+            const usersMap = new Map(); // استخدام Map لمنع التكرار
+            
+            // تجميع الرسائل وتحديد المستخدمين
+            Object.keys(messages).forEach(messageId => {
+                const message = messages[messageId];
+                
+                // تجاهل الرسائل التي ليس للمشرف علاقة بها
+                if (message.senderId !== currentUserId && message.receiverId !== currentUserId) {
+                    return;
+                }
+                
+                // تحديد المستخدم الآخر في المحادثة
+                const otherUserId = message.senderId === currentUserId ? 
+                    message.receiverId : message.senderId;
+                
+                if (!usersMap.has(otherUserId)) {
+                    usersMap.set(otherUserId, {
+                        id: otherUserId,
+                        messages: [],
+                        unreadCount: 0,
+                        lastMessageTime: 0
+                    });
+                }
+                
+                const userData = usersMap.get(otherUserId);
+                userData.messages.push({
+                    id: messageId,
+                    ...message
+                });
+                
+                // حساب الرسائل غير المقروءة
+                if (message.receiverId === currentUserId && !message.isRead) {
+                    userData.unreadCount++;
+                }
+                
+                // تحديث وقت آخر رسالة
+                if (!userData.lastMessageTime || message.timestamp > userData.lastMessageTime) {
+                    userData.lastMessageTime = message.timestamp;
+                }
+            });
+            
+            // تحويل Map إلى مصفوفة وترتيبها حسب آخر رسالة
+            const usersArray = Array.from(usersMap.values());
+            usersArray.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+            
+            if (usersArray.length > 0) {
+                // تحميل معلومات المستخدمين
+                loadUsersInfo(usersArray, currentUserId);
+            } else {
+                usersList.innerHTML = '<p class="no-users">لا توجد محادثات بعد</p>';
+            }
+        } else {
+            usersList.innerHTML = '<p class="no-users">لا توجد محادثات بعد</p>';
+        }
+    });
+}
+
+// تحميل معلومات المستخدمين للمشرف
+function loadUsersInfo(usersArray, currentUserId) {
+    const usersRef = ref(database, 'users');
+    onValue(usersRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const allUsers = snapshot.val();
+            const usersToShow = [];
+            
+            // إضافة معلومات كل مستخدم
+            usersArray.forEach(userData => {
+                if (allUsers[userData.id] && userData.id !== currentUserId) {
+                    usersToShow.push({
+                        ...userData,
+                        ...allUsers[userData.id]
+                    });
+                    
+                    // تخزين الرسائل في الذاكرة
+                    userMessages[userData.id] = userData.messages;
+                    userUnreadCounts[userData.id] = userData.unreadCount;
+                    userLastMessageTime[userData.id] = userData.lastMessageTime;
+                }
+            });
+            
+            // عرض قائمة المستخدمين
+            displayUsersList(usersToShow, currentUserId);
         }
     }, { onlyOnce: true });
 }
@@ -631,7 +830,7 @@ function loadAdminUsersForMessages(currentUserId) {
     usersList.innerHTML = '';
     
     if (adminUsers.length > 0) {
-        // تحميل رسائل الإدارة
+        // تحميل رسائل الإدارة فقط
         loadUserMessages(adminUsers, currentUserId);
     } else {
         usersList.innerHTML = '<p class="no-users">لا توجد إدارة متاحة حالياً</p>';
@@ -656,6 +855,11 @@ function loadUserMessages(users, currentUserId) {
             // تجميع الرسائل حسب المستخدم
             Object.keys(messages).forEach(messageId => {
                 const message = messages[messageId];
+                
+                // تجاهل الرسائل التي ليس للمستخدم علاقة بها
+                if (message.senderId !== currentUserId && message.receiverId !== currentUserId) {
+                    return;
+                }
                 
                 // تحديد المستخدم الآخر في المحادثة
                 const otherUserId = message.senderId === currentUserId ? 
@@ -711,6 +915,9 @@ function displayUsersList(users, currentUserId) {
     users.forEach(userData => {
         const userItem = document.createElement('div');
         userItem.className = 'user-item';
+        if (userUnreadCounts[userData.id] > 0) {
+            userItem.classList.add('unread');
+        }
         userItem.dataset.userId = userData.id;
         
         const lastMessage = userMessages[userData.id] ? 
@@ -892,7 +1099,13 @@ function sendMessageToUser(message, user, receiverId) {
             
             // تحديث وقت آخر رسالة
             userLastMessageTime[receiverId] = Date.now();
-            sortUsersList();
+            
+            // إعادة تحميل قائمة المستخدمين للمشرفين
+            if (currentUserData.isAdmin) {
+                loadAllUsersForAdmin(user.uid);
+            } else {
+                sortUsersList();
+            }
         })
         .catch(error => {
             alert('حدث خطأ أثناء إرسال الرسالة: ' + error.message);
@@ -1002,17 +1215,36 @@ function formatDate(timestamp) {
     if (!timestamp) return 'غير معروف';
     
     const date = new Date(timestamp);
-    return date.toLocaleDateString('ar-EG', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return 'اليوم ' + date.toLocaleTimeString('ar-EG', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } else if (diffDays === 1) {
+        return 'أمس ' + date.toLocaleTimeString('ar-EG', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } else if (diffDays < 7) {
+        const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        return days[date.getDay()] + ' ' + date.toLocaleTimeString('ar-EG', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } else {
+        return date.toLocaleDateString('ar-EG', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
 }
-
-// إضافة أيقونة الإدارة إلى Footer عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', addAdminIconToFooter);
 
 // إضافة مستمعي الأحداث للأزرار الجديدة
 closeOrdersBtn.addEventListener('click', () => {
