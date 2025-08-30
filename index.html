@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسريع - منصة النشر الاجتماعي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- شريط الرأس -->
+    <header>
+        <div class="header-content">
+            <i class="fas fa-home home-icon" id="home-icon"></i>
+            <h1>تسريع</h1>
+        </div>
+    </header>
+
+    <!-- الصفحة الرئيسية (عرض المنشورات) -->
+    <main id="home-page">
+        <div class="container">
+            <div id="posts-container" class="posts-grid">
+                <!-- المنشورات ستظهر هنا -->
+            </div>
+        </div>
+    </main>
+
+    <!-- صفحة التوثيق (تسجيل دخول / إنشاء حساب) -->
+    <div id="auth-page" class="page hidden">
+        <div class="auth-container">
+            <button id="close-auth" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>تسجيل الدخول / إنشاء حساب</h2>
+            <div id="auth-message"></div>
+            
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">تسجيل الدخول</button>
+                <button class="tab-btn" data-tab="signup">إنشاء حساب</button>
+            </div>
+            
+            <div id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">البريد الإلكتروني</label>
+                    <input type="email" id="login-email" placeholder="ادخل بريدك الإلكتروني">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">كلمة المرور</label>
+                    <input type="password" id="login-password" placeholder="ادخل كلمة المرور">
+                </div>
+                <button id="login-btn" class="btn">تسجيل الدخول</button>
+            </div>
+            
+            <div id="signup-form" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="signup-name">الاسم الكامل</label>
+                    <input type="text" id="signup-name" placeholder="ادخل اسمك الكامل">
+                </div>
+                <div class="form-group">
+                    <label for="signup-phone">رقم الهاتف</label>
+                    <input type="tel" id="signup-phone" placeholder="ادخل رقم هاتفك">
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">البريد الإلكتروني</label>
+                    <input type="email" id="signup-email" placeholder="ادخل بريدك الإلكتروني">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">كلمة المرور</label>
+                    <input type="password" id="signup-password" placeholder="أنشئ كلمة مرور">
+                </div>
+                <div class="form-group">
+                    <label for="signup-address">العنوان</label>
+                    <input type="text" id="signup-address" placeholder="ادخل عنوانك">
+                </div>
+                <button id="signup-btn" class="btn">إنشاء حساب</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- صفحة إنشاء منشور جديد -->
+    <div id="add-post-page" class="page hidden">
+        <div class="container">
+            <div class="page-header">
+                <h2 class="page-title">إنشاء منشور جديد</h2>
+                <button id="close-add-post" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="add-post-form">
+                <div class="form-group">
+                    <label for="post-title">عنوان المنشور</label>
+                    <input type="text" id="post-title" placeholder="أدخل عنواناً جذاباً">
+                </div>
+                <div class="form-group">
+                    <label for="post-description">الوصف</label>
+                    <textarea id="post-description" rows="4" placeholder="صف منشورك بالتفصيل"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="post-price">السعر (اختياري)</label>
+                    <input type="text" id="post-price" placeholder="مثال: 100 ريال">
+                </div>
+                <div class="form-group">
+                    <label for="post-location">الموقع</label>
+                    <input type="text" id="post-location" placeholder="أدخل موقعك">
+                </div>
+                <div class="form-group">
+                    <label for="post-phone">رقم الهاتف</label>
+                    <input type="tel" id="post-phone" placeholder="رقم للتواصل">
+                </div>
+                <div class="form-group">
+                    <label for="post-image">صورة المنشور</label>
+                    <div class="image-upload-container">
+                        <input type="file" id="post-image" accept="image/*" hidden>
+                        <button type="button" id="choose-image-btn" class="btn-outline">
+                            <i class="fas fa-image"></i> اختر صورة
+                        </button>
+                        <span id="image-name">لم يتم اختيار صورة</span>
+                        <button type="button" id="camera-btn" class="btn-outline">
+                            <i class="fas fa-camera"></i> الكاميرا
+                        </button>
+                    </div>
+                    <div id="image-preview" class="image-preview hidden">
+                        <img id="preview-img" src="#" alt="معاينة الصورة">
+                        <button type="button" id="remove-image-btn" class="btn-remove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <button id="publish-btn" class="btn">نشر الآن</button>
+            </div>
+        </div>
+    </div>
+
+
+<!-- صفحة الطلبات للإدارة -->
+<div id="orders-page" class="page hidden">
+    <div class="container">
+        <div class="page-header">
+            <h2 class="page-title">إدارة الطلبات</h2>
+            <button id="close-orders" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">الكل</button>
+            <button class="filter-btn" data-filter="pending">قيد الانتظار</button>
+            <button class="filter-btn" data-filter="approved">مقبولة</button>
+            <button class="filter-btn" data-filter="rejected">مرفوضة</button>
+        </div>
+        
+        <div id="orders-container" class="orders-list">
+            <!-- الطلبات ستظهر هنا -->
+        </div>
+    </div>
+</div>
+
+<!-- صفحة تفاصيل الطلب -->
+<div id="order-detail-page" class="page hidden">
+    <div class="container">
+        <div class="page-header">
+            <h2 class="page-title">تفاصيل الطلب</h2>
+            <button id="close-order-detail" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="order-detail-content">
+            <!-- محتوى تفاصيل الطلب سيظهر هنا -->
+        </div>
+        
+        <div class="order-actions">
+            <button id="approve-order-btn" class="btn btn-success">قبول الطلب</button>
+            <button id="reject-order-btn" class="btn btn-danger">رفض الطلب</button>
+            <button id="chat-with-buyer-btn" class="btn">التحدث مع المشتري</button>
+            <button id="chat-with-seller-btn" class="btn">التحدث مع البائع</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- صفحة تفاصيل المنشور -->
+<div id="post-detail-page" class="page hidden">
+    <div class="container">
+        <div class="page-header">
+            <h2 class="page-title">تفاصيل المنشور</h2>
+            <button id="close-post-detail" class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="post-detail-content">
+            <!-- محتوى تفاصيل المنشور سيتم إضافته هنا -->
+        </div>
+        
+        <!-- زر الشراء -->
+        <div class="purchase-section">
+            <button id="buy-now-btn" class="btn btn-success">
+                <i class="fas fa-shopping-cart"></i> اشتري الآن
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+    <!-- صفحة حساب المستخدم -->
+    <div id="profile-page" class="page hidden">
+        <div class="container">
+            <div class="page-header">
+                <h2 class="page-title">حسابي</h2>
+                <button id="close-profile" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="user-info">
+                <!-- معلومات المستخدم ستظهر هنا -->
+            </div>
+            <button id="logout-btn" class="btn">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <!-- صفحة الرسائل -->
+    <div id="messages-page" class="page hidden">
+        <div class="container">
+            <div class="page-header">
+                <h2 class="page-title">الرسائل</h2>
+                <button id="close-messages" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="messages-container">
+                <div class="conversations-list">
+                    <h3>المحادثات النشطة</h3>
+                    <div id="users-list" class="users-list">
+                        <!-- قائمة المستخدمين ستظهر هنا -->
+                    </div>
+                </div>
+                
+                <div class="chat-container">
+                    <div id="chat-header" class="chat-header">
+                        <h3 id="current-chat-user">اختر محادثة لبدء الدردشة</h3>
+                    </div>
+                    
+                    <div id="messages-container" class="messages-content">
+                        <div class="no-chat-selected">
+                            <p>اختر محادثة لبدء الدردشة</p>
+                        </div>
+                    </div>
+                    
+                    <div class="message-input-container">
+                        <textarea id="message-input" placeholder="اكتب رسالتك هنا..." disabled></textarea>
+                        <button id="send-message-btn" class="btn" disabled>إرسال</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة التحميل -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>جاري النشر...</p>
+        <div class="progress-bar">
+            <div class="progress" id="upload-progress"></div>
+        </div>
+    </div>
+
+<!-- شريط التذييل -->
+<footer>
+    <div class="footer-icons">
+        <div class="icon" id="profile-icon">
+            <i class="fas fa-user"></i>
+            <span>حسابي</span>
+        </div>
+        <div class="icon" id="messages-icon">
+            <i class="fas fa-envelope"></i>
+            <span>الرسائل</span>
+        </div>
+        <div class="icon highlight" id="add-post-icon">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="icon" id="support-icon">
+            <i class="fas fa-headset"></i>
+            <span>الدعم</span>
+        </div>
+        <div class="icon" id="more-icon">
+            <i class="fas fa-ellipsis-h"></i>
+            <span>المزيد</span>
+        </div>
+        <!-- أيقونة الإدارة (تظهر للمشرفين فقط) -->
+        <div class="icon" id="admin-icon" style="display: none;">
+            <i class="fas fa-cog"></i>
+            <span>الإدارة</span>
+        </div>
+    </div>
+</footer>
+    <!-- Firebase SDK -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
